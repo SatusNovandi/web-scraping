@@ -1,0 +1,1032 @@
+
+Load in the necessary libraries
+
+import requests # pip install requests
+from bs4 import BeautifulSoup as bs # pip install beautifulsoup4
+     
+Load our first page
+
+# Load the webpage content
+r = requests.get("https://keithgalli.github.io/web-scraping/example.html")
+
+# Convert to a beautiful soup object
+soup = bs(r.content)
+
+# Print out our html
+print(soup.prettify())
+     
+<html>
+ <head>
+  <title>
+   HTML Example
+  </title>
+ </head>
+ <body>
+  <div align="middle">
+   <h1>
+    HTML Webpage
+   </h1>
+   <p>
+    Link to more interesting example:
+    <a href="https://keithgalli.github.io/web-scraping/webpage.html">
+     keithgalli.github.io/web-scraping/webpage.html
+    </a>
+   </p>
+  </div>
+  <h2>
+   A Header
+  </h2>
+  <p>
+   <i>
+    Some italicized text
+   </i>
+  </p>
+  <h2>
+   Another header
+  </h2>
+  <p id="paragraph-id">
+   <b>
+    Some bold text
+   </b>
+  </p>
+ </body>
+</html>
+
+Start using Beautiful Soup to Scrape
+find and find_all
+
+first_header = soup.find("h2")
+
+headers = soup.find_all("h2")
+print(headers)
+     
+[<h2>A Header</h2>, <h2>Another header</h2>]
+
+# Pass in a list of elements to look for 
+first_header = soup.find(["h1", "h2"])
+
+headers = soup.find_all(["h1", "h2"])
+headers
+     
+[<h1>HTML Webpage</h1>, <h2>A Header</h2>, <h2>Another header</h2>]
+
+# You can pass in attributes to the find/find_all function
+paragraph = soup.find_all("p", attrs={"id": "paragraph-id"})
+paragraph
+     
+[<p id="paragraph-id"><b>Some bold text</b></p>]
+
+# You can nest find/find_all calls
+body = soup.find('body')
+div = body.find('div')
+header = div.find('h1')
+header
+     
+<h1>HTML Webpage</h1>
+
+# We can search specific strings in our find/find_all calls
+import re
+
+paragraphs = soup.find_all("p", string=re.compile("Some"))
+paragraphs
+
+headers = soup.find_all("h2", string=re.compile("(H|h)eader"))
+headers
+     
+[<h2>A Header</h2>, <h2>Another header</h2>]
+select (CSS selector)
+
+print(soup.body.prettify())
+     
+<body>
+ <div align="middle">
+  <h1>
+   HTML Webpage
+  </h1>
+  <p>
+   Link to more interesting example:
+   <a href="https://keithgalli.github.io/web-scraping/webpage.html">
+    keithgalli.github.io/web-scraping/webpage.html
+   </a>
+  </p>
+ </div>
+ <h2>
+  A Header
+ </h2>
+ <p>
+  <i>
+   Some italicized text
+  </i>
+ </p>
+ <h2>
+  Another header
+ </h2>
+ <p id="paragraph-id">
+  <b>
+   Some bold text
+  </b>
+ </p>
+</body>
+
+
+content = soup.select("div p")
+content
+     
+[<p>Link to more interesting example: <a href="https://keithgalli.github.io/web-scraping/webpage.html">keithgalli.github.io/web-scraping/webpage.html</a></p>]
+
+paragraphs = soup.select("h2 ~ p")
+paragraphs
+     
+[<p><i>Some italicized text</i></p>,
+ <p id="paragraph-id"><b>Some bold text</b></p>]
+
+bold_text = soup.select("p#paragraph-id b")
+bold_text
+     
+[<b>Some bold text</b>]
+
+paragraphs = soup.select("body > p")
+print(paragraphs)
+
+for paragraph in paragraphs:
+  print(paragraph.select("i"))
+     
+[<p><i>Some italicized text</i></p>, <p id="paragraph-id"><b>Some bold text</b></p>]
+[<i>Some italicized text</i>]
+[]
+
+# Grab by element with specific property
+soup.select("[align=middle]")
+     
+[<div align="middle">
+ <h1>HTML Webpage</h1>
+ <p>Link to more interesting example: <a href="https://keithgalli.github.io/web-scraping/webpage.html">keithgalli.github.io/web-scraping/webpage.html</a></p>
+ </div>]
+Get different properties of the HTML
+
+# use .string
+header = soup.find("h2")
+header.string
+
+# If multiple child elements use get_text
+div = soup.find("div")
+print(div.prettify())
+print(div.get_text())
+     
+<div align="middle">
+ <h1>
+  HTML Webpage
+ </h1>
+ <p>
+  Link to more interesting example:
+  <a href="https://keithgalli.github.io/web-scraping/webpage.html">
+   keithgalli.github.io/web-scraping/webpage.html
+  </a>
+ </p>
+</div>
+
+
+HTML Webpage
+Link to more interesting example: keithgalli.github.io/web-scraping/webpage.html
+
+
+# Get a specific property from an element
+link = soup.find("a")
+link['href']
+
+paragraphs = soup.select("p#paragraph-id")
+paragraphs[0]['id']
+     
+'paragraph-id'
+Code navigation
+
+# Path Syntax
+print(soup.body.prettify())
+     
+<body>
+ <div align="middle">
+  <h1>
+   HTML Webpage
+  </h1>
+  <p>
+   Link to more interesting example:
+   <a href="https://keithgalli.github.io/web-scraping/webpage.html">
+    keithgalli.github.io/web-scraping/webpage.html
+   </a>
+  </p>
+ </div>
+ <h2>
+  A Header
+ </h2>
+ <p>
+  <i>
+   Some italicized text
+  </i>
+ </p>
+ <h2>
+  Another header
+ </h2>
+ <p id="paragraph-id">
+  <b>
+   Some bold text
+  </b>
+ </p>
+</body>
+
+
+# Know the terms: Parent, Sibling, Child
+
+soup.body.find("div").find_next_siblings()
+     
+[<h2>A Header</h2>,
+ <p><i>Some italicized text</i></p>,
+ <h2>Another header</h2>,
+ <p id="paragraph-id"><b>Some bold text</b></p>]
+Exercises!
+Go to https://keithgalli.github.io/web-scraping/webpage.html
+
+Load the webpage
+
+# Load the webpage content
+r = requests.get("https://keithgalli.github.io/web-scraping/webpage.html")
+
+# Convert to a beautiful soup object
+webpage = bs(r.content)
+
+# Print out our html
+print(webpage.prettify())
+     
+<html>
+ <head>
+  <title>
+   Keith Galli's Page
+  </title>
+  <style>
+   table {
+    border-collapse: collapse;
+  }
+  th {
+    padding:5px;
+  }
+  td {
+    border: 1px solid #ddd;
+    padding: 5px;
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #add8e6;
+    color: black;
+  }
+  .block {
+  width: 100px;
+  /*float: left;*/
+    display: inline-block;
+    zoom: 1;
+  }
+  .column {
+  float: left;
+  height: 200px;
+  /*width: 33.33%;*/
+  padding: 5px;
+  }
+
+  .row::after {
+    content: "";
+    clear: both;
+    display: table;
+  }
+  </style>
+ </head>
+ <body>
+  <h1>
+   Welcome to my page!
+  </h1>
+  <img src="./images/selfie1.jpg" width="300px"/>
+  <h2>
+   About me
+  </h2>
+  <p>
+   Hi, my name is Keith and I am a YouTuber who focuses on content related to programming, data science, and machine learning!
+  </p>
+  <p>
+   Here is a link to my channel:
+   <a href="https://www.youtube.com/kgmit">
+    youtube.com/kgmit
+   </a>
+  </p>
+  <p>
+   I grew up in the great state of New Hampshire here in the USA. From an early age I always loved math. Around my senior year of high school, my brother first introduced me to programming. I found it a creative way to apply the same type of logical thinking skills that I enjoyed with math. This influenced me to study computer science in college and ultimately create a YouTube channel to share some things that I have learned along the way.
+  </p>
+  <h3>
+   Hobbies
+  </h3>
+  <p>
+   Believe it or not, I don't code 24/7. I love doing all sorts of active things. I like to play ice hockey &amp; table tennis as well as run, hike, skateboard, and snowboard. In addition to sports, I am a board game enthusiast. The two that I've been playing the most recently are
+   <i>
+    Settlers of Catan
+   </i>
+   and
+   <i>
+    Othello
+   </i>
+   .
+  </p>
+  <h3>
+   Fun Facts
+  </h3>
+  <ul class="fun-facts">
+   <li>
+    Owned my dream car in high school
+    <a href="#footer">
+     <sup>
+      1
+     </sup>
+    </a>
+   </li>
+   <li>
+    Middle name is Ronald
+   </li>
+   <li>
+    Never had been on a plane until college
+   </li>
+   <li>
+    Dunkin Donuts coffee is better than Starbucks
+   </li>
+   <li>
+    A favorite book series of mine is
+    <i>
+     Ender's Game
+    </i>
+   </li>
+   <li>
+    Current video game of choice is
+    <i>
+     Rocket League
+    </i>
+   </li>
+   <li>
+    The band that I've seen the most times live is the
+    <i>
+     Zac Brown Band
+    </i>
+   </li>
+  </ul>
+  <h2>
+   Social Media
+  </h2>
+  I encourage you to check out my content on all social media platforms
+  <br/>
+  <ul class="socials">
+   <li class="social instagram">
+    <b>
+     Instagram:
+    </b>
+    <a href="https://www.instagram.com/keithgalli/">
+     https://www.instagram.com/keithgalli/
+    </a>
+   </li>
+   <li class="social twitter">
+    <b>
+     Twitter:
+    </b>
+    <a href="https://twitter.com/keithgalli">
+     https://twitter.com/keithgalli
+    </a>
+   </li>
+   <li class="social linkedin">
+    <b>
+     LinkedIn:
+    </b>
+    <a href="https://www.linkedin.com/in/keithgalli/">
+     https://www.linkedin.com/in/keithgalli/
+    </a>
+   </li>
+   <li class="social tiktok">
+    <b>
+     TikTok:
+    </b>
+    <a href="https://www.tiktok.com/@keithgalli">
+     https://www.tiktok.com/@keithgalli
+    </a>
+   </li>
+  </ul>
+  <h2>
+   Photos
+  </h2>
+  Here are a few photos from a trip to italy I took last year
+  <div class="row">
+   <div class="column">
+    <img alt="Lake Como" src="images/italy/lake_como.jpg" style="height:100%"/>
+   </div>
+   <div class="column">
+    <img alt="Pontevecchio, Florence" src="images/italy/pontevecchio.jpg" style="height:100%"/>
+   </div>
+   <div class="column">
+    <img alt="Riomaggiore, Cinque de Terre" src="images/italy/riomaggiore.jpg" style="height:100%"/>
+   </div>
+  </div>
+  <div>
+  </div>
+  <h2>
+   Table
+  </h2>
+  My MIT hockey stats :)
+  <br/>
+  <table class="hockey-stats">
+   <thead>
+    <tr>
+     <th class="season" data-sort="">
+      S
+     </th>
+     <th class="team" data-sort="team">
+      Team
+     </th>
+     <th class="league" data-sort="league">
+      League
+     </th>
+     <th class="regular gp" data-sort="gp">
+      GP
+     </th>
+     <th class="regular g" data-sort="g">
+      G
+     </th>
+     <th class="regular a" data-sort="a">
+      A
+     </th>
+     <th class="regular tp" data-sort="tp">
+      TP
+     </th>
+     <th class="regular pim" data-sort="pim">
+      PIM
+     </th>
+     <th class="regular pm" data-sort="pm">
+      +/-
+     </th>
+     <th class="separator">
+     </th>
+     <th class="postseason">
+      POST
+     </th>
+     <th class="postseason gp" data-sort="playoffs-gp">
+      GP
+     </th>
+     <th class="postseason g" data-sort="playoffs-g">
+      G
+     </th>
+     <th class="postseason a" data-sort="playoffs-a">
+      A
+     </th>
+     <th class="postseason tp" data-sort="playoffs-tp">
+      TP
+     </th>
+     <th class="postseason pim" data-sort="playoffs-pim">
+      PIM
+     </th>
+     <th class="postseason pm" data-sort="playoffs-pm">
+      +/-
+     </th>
+    </tr>
+   </thead>
+   <tbody>
+    <tr class="team-continent-NA ">
+     <td class="season sorted">
+      2014-15
+     </td>
+     <td class="team">
+      <i>
+       <img src="images/flag.png"/>
+      </i>
+      <span class="txt-blue">
+       <a href="https://www.eliteprospects.com/team/10263/mit-mass.-inst.-of-tech./2014-2015?tab=stats">
+        MIT (Mass. Inst. of Tech.)
+       </a>
+      </span>
+     </td>
+     <td class="league">
+      <a href="https://www.eliteprospects.com/league/acha-ii/stats/2014-2015">
+       ACHA II
+      </a>
+     </td>
+     <td class="regular gp">
+      17
+     </td>
+     <td class="regular g">
+      3
+     </td>
+     <td class="regular a">
+      9
+     </td>
+     <td class="regular tp">
+      12
+     </td>
+     <td class="regular pim">
+      20
+     </td>
+     <td class="regular pm">
+     </td>
+     <td class="separator">
+      |
+     </td>
+     <td class="postseason">
+      <a href="https://www.eliteprospects.com/league/acha-ii/stats/2014-2015">
+      </a>
+     </td>
+     <td class="postseason gp">
+     </td>
+     <td class="postseason g">
+     </td>
+     <td class="postseason a">
+     </td>
+     <td class="postseason tp">
+     </td>
+     <td class="postseason pim">
+     </td>
+     <td class="postseason pm">
+     </td>
+    </tr>
+    <tr class="team-continent-NA ">
+     <td class="season sorted">
+      2015-16
+     </td>
+     <td class="team">
+      <i>
+       <img src="images/flag.png"/>
+      </i>
+      <span class="txt-blue">
+       <a href="https://www.eliteprospects.com/team/10263/mit-mass.-inst.-of-tech./2015-2016?tab=stats">
+        MIT (Mass. Inst. of Tech.)
+       </a>
+      </span>
+     </td>
+     <td class="league">
+      <a href="https://www.eliteprospects.com/league/acha-ii/stats/2015-2016">
+       ACHA II
+      </a>
+     </td>
+     <td class="regular gp">
+      9
+     </td>
+     <td class="regular g">
+      1
+     </td>
+     <td class="regular a">
+      1
+     </td>
+     <td class="regular tp">
+      2
+     </td>
+     <td class="regular pim">
+      2
+     </td>
+     <td class="regular pm">
+     </td>
+     <td class="separator">
+      |
+     </td>
+     <td class="postseason">
+      <a href="https://www.eliteprospects.com/league/acha-ii/stats/2015-2016">
+      </a>
+     </td>
+     <td class="postseason gp">
+     </td>
+     <td class="postseason g">
+     </td>
+     <td class="postseason a">
+     </td>
+     <td class="postseason tp">
+     </td>
+     <td class="postseason pim">
+     </td>
+     <td class="postseason pm">
+     </td>
+    </tr>
+    <tr class="team-continent-NA ">
+     <td class="season sorted">
+      2016-17
+     </td>
+     <td class="team">
+      <i>
+       <img src="images/flag.png"/>
+      </i>
+      <span class="txt-blue">
+       <a href="https://www.eliteprospects.com/team/10263/mit-mass.-inst.-of-tech./2016-2017?tab=stats">
+        MIT (Mass. Inst. of Tech.)
+       </a>
+      </span>
+     </td>
+     <td class="league">
+      <a href="https://www.eliteprospects.com/league/acha-ii/stats/2016-2017">
+       ACHA II
+      </a>
+     </td>
+     <td class="regular gp">
+      12
+     </td>
+     <td class="regular g">
+      5
+     </td>
+     <td class="regular a">
+      5
+     </td>
+     <td class="regular tp">
+      10
+     </td>
+     <td class="regular pim">
+      8
+     </td>
+     <td class="regular pm">
+      0
+     </td>
+     <td class="separator">
+      |
+     </td>
+     <td class="postseason">
+     </td>
+     <td class="postseason gp">
+     </td>
+     <td class="postseason g">
+     </td>
+     <td class="postseason a">
+     </td>
+     <td class="postseason tp">
+     </td>
+     <td class="postseason pim">
+     </td>
+     <td class="postseason pm">
+     </td>
+    </tr>
+    <tr class="team-continent-EU ">
+     <td class="season sorted">
+      2017-18
+     </td>
+     <td class="team">
+      Did not play
+     </td>
+     <td class="league">
+      <a href="https://www.eliteprospects.com/stats">
+      </a>
+     </td>
+     <td class="regular gp">
+     </td>
+     <td class="regular g">
+     </td>
+     <td class="regular a">
+     </td>
+     <td class="regular tp">
+     </td>
+     <td class="regular pim">
+     </td>
+     <td class="regular pm">
+     </td>
+     <td class="separator">
+      |
+     </td>
+     <td class="postseason">
+      <a href="https://www.eliteprospects.com/stats">
+      </a>
+     </td>
+     <td class="postseason gp">
+     </td>
+     <td class="postseason g">
+     </td>
+     <td class="postseason a">
+     </td>
+     <td class="postseason tp">
+     </td>
+     <td class="postseason pim">
+     </td>
+     <td class="postseason pm">
+     </td>
+    </tr>
+    <tr class="team-continent-NA ">
+     <td class="season sorted">
+      2018-19
+     </td>
+     <td class="team">
+      <i>
+       <img src="images/flag.png"/>
+      </i>
+      <span class="txt-blue">
+       <a href="https://www.eliteprospects.com/team/10263/mit-mass.-inst.-of-tech./2018-2019?tab=stats">
+        MIT (Mass. Inst. of Tech.)
+       </a>
+      </span>
+     </td>
+     <td class="league">
+      <a href="https://www.eliteprospects.com/league/acha-iii/stats/2018-2019">
+       ACHA III
+      </a>
+     </td>
+     <td class="regular gp">
+      8
+     </td>
+     <td class="regular g">
+      5
+     </td>
+     <td class="regular a">
+      10
+     </td>
+     <td class="regular tp">
+      15
+     </td>
+     <td class="regular pim">
+      8
+     </td>
+     <td class="regular pm">
+     </td>
+     <td class="separator">
+      |
+     </td>
+     <td class="postseason">
+      <a href="https://www.eliteprospects.com/league/acha-iii/stats/2018-2019">
+      </a>
+     </td>
+     <td class="postseason gp">
+     </td>
+     <td class="postseason g">
+     </td>
+     <td class="postseason a">
+     </td>
+     <td class="postseason tp">
+     </td>
+     <td class="postseason pim">
+     </td>
+     <td class="postseason pm">
+     </td>
+    </tr>
+   </tbody>
+  </table>
+  <h2>
+   Mystery Message Challenge!
+  </h2>
+  <p>
+   If you scrape the links below grabbing the &lt;p&gt; tag with id="secret-word", you'll discover a secret message :)
+  </p>
+  <div width="50%">
+   <div align="left" class="block">
+    <ul>
+     <li>
+      <a href="challenge/file_1.html">
+       File 1
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_2.html">
+       File 2
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_3.html">
+       File 3
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_4.html">
+       File 4
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_5.html">
+       File 5
+      </a>
+     </li>
+    </ul>
+   </div>
+   <div align="center" class="block">
+    <ul>
+     <li>
+      <a href="challenge/file_6.html">
+       File 6
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_7.html">
+       File 7
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_8.html">
+       File 8
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_9.html">
+       File 9
+      </a>
+     </li>
+     <li>
+      <a href="challenge/file_10.html">
+       File 10
+      </a>
+     </li>
+    </ul>
+   </div>
+  </div>
+  <h2>
+   Footnotes
+  </h2>
+  <p id="footer">
+   1. This was actually a minivan that I named Debora. Maybe not my dream car, but I loved her nonetheless.
+  </p>
+ </body>
+</html>
+Grab all of the social links from the webpage
+Do this in at least 3 different ways
+
+
+links = webpage.select("ul.socials a")
+actual_links = [link['href'] for link in links]
+actual_links
+     
+['https://www.instagram.com/keithgalli/',
+ 'https://twitter.com/keithgalli',
+ 'https://www.linkedin.com/in/keithgalli/',
+ 'https://www.tiktok.com/@keithgalli']
+
+ulist = webpage.find("ul", attrs={"class": "socials"})
+links = ulist.find_all("a")
+actual_links = [link['href'] for link in links]
+actual_links
+     
+['https://www.instagram.com/keithgalli/',
+ 'https://twitter.com/keithgalli',
+ 'https://www.linkedin.com/in/keithgalli/',
+ 'https://www.tiktok.com/@keithgalli']
+
+links = webpage.select("li.social a")
+actual_links = [link['href'] for link in links]
+actual_links
+     
+['https://www.instagram.com/keithgalli/',
+ 'https://twitter.com/keithgalli',
+ 'https://www.linkedin.com/in/keithgalli/',
+ 'https://www.tiktok.com/@keithgalli']
+
+links = webpage.select("body ul li.social a")
+links
+     
+[<a href="https://www.instagram.com/keithgalli/">https://www.instagram.com/keithgalli/</a>,
+ <a href="https://twitter.com/keithgalli">https://twitter.com/keithgalli</a>,
+ <a href="https://www.linkedin.com/in/keithgalli/">https://www.linkedin.com/in/keithgalli/</a>,
+ <a href="https://www.tiktok.com/@keithgalli">https://www.tiktok.com/@keithgalli</a>]
+Exercise #2: Grab all text on the webpage
+Just get stuff above the Photos tag
+
+
+header = webpage.body.find("h2", string="Photos")
+previous_elements = header.find_previous_siblings()
+previous_elements_sorted = previous_elements[::-1]
+elements = [x.get_text() for x in previous_elements_sorted]
+text = "\n".join(elements)
+print(text)
+
+
+
+     
+Welcome to my page!
+
+About me
+Hi, my name is Keith and I am a YouTuber who focuses on content related to programming, data science, and machine learning!
+Here is a link to my channel: youtube.com/kgmit
+I grew up in the great state of New Hampshire here in the USA. From an early age I always loved math. Around my senior year of high school, my brother first introduced me to programming. I found it a creative way to apply the same type of logical thinking skills that I enjoyed with math. This influenced me to study computer science in college and ultimately create a YouTube channel to share some things that I have learned along the way.
+Hobbies
+Believe it or not, I don't code 24/7. I love doing all sorts of active things. I like to play ice hockey & table tennis as well as run, hike, skateboard, and snowboard. In addition to sports, I am a board game enthusiast. The two that I've been playing the most recently are Settlers of Catan and Othello.
+Fun Facts
+
+Owned my dream car in high school 1
+Middle name is Ronald
+Never had been on a plane until college
+Dunkin Donuts coffee is better than Starbucks
+A favorite book series of mine is Ender's Game
+Current video game of choice is Rocket League
+The band that I've seen the most times live is the Zac Brown Band
+
+Social Media
+
+
+Instagram: https://www.instagram.com/keithgalli/
+Twitter: https://twitter.com/keithgalli
+LinkedIn: https://www.linkedin.com/in/keithgalli/
+TikTok: https://www.tiktok.com/@keithgalli
+
+Scrape the Table
+
+l = []
+for tr in table_rows:
+    td = tr.find_all('td')
+    row = [tr.text for tr in td]
+    l.append(row)
+pd.DataFrame(l, columns=["A", "B", ...])
+     
+
+import pandas as pd
+
+table = webpage.select("table.hockey-stats")[0]
+columns = table.find("thead").find_all("th")
+column_names = [c.string for c in columns]
+
+table_rows = table.find("tbody").find_all("tr")
+l = []
+for tr in table_rows:
+    td = tr.find_all('td')
+    row = [str(tr.get_text()).strip() for tr in td]
+    l.append(row)
+
+df = pd.DataFrame(l, columns=column_names)
+df.head()
+     
+S	Team	League	GP	G	A	TP	PIM	+/-		POST	GP	G	A	TP	PIM	+/-
+0	2014-15	MIT (Mass. Inst. of Tech.)	ACHA II	17	3	9	12	20		|							
+1	2015-16	MIT (Mass. Inst. of Tech.)	ACHA II	9	1	1	2	2		|							
+2	2016-17	MIT (Mass. Inst. of Tech.)	ACHA II	12	5	5	10	8	0	|							
+3	2017-18	Did not play								|							
+4	2018-19	MIT (Mass. Inst. of Tech.)	ACHA III	8	5	10	15	8		|							
+Grab all fun facts that use word "is"
+
+import re
+
+facts = webpage.select("ul.fun-facts li")
+facts_with_is = [fact.find(string=re.compile("is")) for fact in facts]
+facts_with_is = [fact.find_parent().get_text() for fact in facts_with_is if fact]
+facts_with_is
+
+
+
+     
+['Middle name is Ronald',
+ 'Dunkin Donuts coffee is better than Starbucks',
+ "A favorite book series of mine is Ender's Game",
+ 'Current video game of choice is Rocket League',
+ "The band that I've seen the most times live is the Zac Brown Band"]
+Download an Image
+
+# Done locally, but here is the code
+import requests # pip install requests
+from bs4 import BeautifulSoup as bs # pip install beautifulsoup4
+
+# Load the webpage content
+url = "https://keithgalli.github.io/web-scraping/"
+r = requests.get(url+"webpage.html")
+
+# Convert to a beautiful soup object
+webpage = bs(r.content)
+
+images = webpage.select("div.row div.column img")
+image_url = images[0]['src']
+full_url = url + image_url
+
+img_data = requests.get(full_url).content
+with open('lake_como.jpg', 'wb') as handler:
+    handler.write(img_data)
+     
+Solve the mystery challenge!
+
+files = webpage.select("div.block a")
+relative_files = [f['href'] for f in files]
+
+
+url = "https://keithgalli.github.io/web-scraping/"
+for f in relative_files:
+  full_url = url + f
+  page = requests.get(full_url)
+  bs_page = bs(page.content)
+  secret_word_element = bs_page.find("p", attrs={"id": "secret-word"})
+  secret_word = secret_word_element.string
+  print(secret_word)
+
+
+
+
+
+     
+Make
+sure
+to
+smash
+that
+like
+button
+and
+subscribe
+!!!
+
+
+
+     
+
+
+
+
+
+     
+
+
+
+
+
+     
